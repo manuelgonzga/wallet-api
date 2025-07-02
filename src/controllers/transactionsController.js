@@ -87,3 +87,42 @@ export async function getSummaryByUserId(req, res) {
         res.status(500).json({ message: "Internal server error"})
     }
 }
+
+export async function updateTransaction(req, res) {
+  try {
+
+    const { id } = req.params;
+    const { title, amount, category } = req.body;
+
+    if (!title?.trim() || isNaN(Number(amount)) || !category?.trim()) {
+      return res.status(400).json({
+        error: "All fields (title, amount, category) are required and must be valid."
+      });
+    }
+
+    const cleanAmount = Number(amount);
+
+    const result = await sql`
+      UPDATE transactions
+      SET title = ${title},
+          amount = ${cleanAmount},
+          category = ${category}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: "Transaction not found." });
+    }
+
+    res.status(200).json({
+      message: "Transaction updated successfully",
+      transaction: result[0],
+    });
+
+  } catch (error) {
+    console.error("Error updating the transaction:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
