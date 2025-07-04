@@ -60,6 +60,26 @@ export async function deleteTransaction(req, res) {
     }
 }
 
+export async function deleteAllTransactions(req, res) {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    await sql`
+      DELETE FROM transactions WHERE user_id = ${userId}
+    `;
+
+    res.status(200).json({ message: "All transactions deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting all transactions:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
 export async function getSummaryByUserId(req, res) {
     try {
         const {userId} = req.params;
