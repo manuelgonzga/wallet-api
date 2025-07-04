@@ -23,19 +23,19 @@ export async function getUserSettings(req, res) {
 // Crear o actualizar configuración de usuario (upsert)
 export async function createUserSettings(req, res) {
   try {
-    const { user_id, total_amount, months } = req.body;
+    const { user_id, total_amount, period_days } = req.body;
 
-    if (!user_id || total_amount === undefined || months === undefined) {
+    if (!user_id || total_amount === undefined || period_days === undefined) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     // Usamos UPSERT con ON CONFLICT para insertar o actualizar en una sola query
     const result = await sql`
-      INSERT INTO user_settings (user_id, total_amount, months)
-      VALUES (${user_id}, ${total_amount}, ${months})
+      INSERT INTO user_settings (user_id, total_amount, period_days)
+      VALUES (${user_id}, ${total_amount}, ${period_days})
       ON CONFLICT (user_id) DO UPDATE SET
         total_amount = EXCLUDED.total_amount,
-        months = EXCLUDED.months
+        period_days = EXCLUDED.period_days
       RETURNING *
     `;
 

@@ -23,7 +23,7 @@ export async function initDB() {
       CREATE TABLE IF NOT EXISTS user_settings (
         user_id VARCHAR(255) PRIMARY KEY,
         total_amount DECIMAL(10, 2) NOT NULL,
-        months INT NOT NULL
+        period_days INT NOT NULL
         );
     `;
 

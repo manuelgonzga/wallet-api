@@ -17,7 +17,7 @@ export async function getTransactionByUserId(req, res) {
 
 export async function createTransaction(req, res) {
     try {
-        const {title,amount,category,user_id, total_amount, months} = req.body
+        const {title,amount,category,user_id} = req.body
         
         if(!title || !user_id || !category || amount === undefined){
             return res.status(400).json({ message: "All files are required" });
