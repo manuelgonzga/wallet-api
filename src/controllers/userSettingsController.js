@@ -21,6 +21,7 @@ export async function getUserSettings(req, res) {
 }
 
 // Crear o actualizar configuración de usuario (upsert)
+// Nota: start_date NO se actualiza en el ON CONFLICT, y se asigna automáticamente al crear por la DB
 export async function createUserSettings(req, res) {
   try {
     const { user_id, total_amount, period_days } = req.body;
@@ -29,7 +30,6 @@ export async function createUserSettings(req, res) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Usamos UPSERT con ON CONFLICT para insertar o actualizar en una sola query
     const result = await sql`
       INSERT INTO user_settings (user_id, total_amount, period_days)
       VALUES (${user_id}, ${total_amount}, ${period_days})
