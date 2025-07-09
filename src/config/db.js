@@ -24,8 +24,7 @@ export async function initDB() {
         user_id VARCHAR(255) PRIMARY KEY,
         total_amount DECIMAL(10, 2) NOT NULL,
         period_days INT NOT NULL,
-        start_date DATE NOT NULL DEFAULT CURRENT_DATE,
-        currency VARCHAR(10) DEFAULT 'USD'
+        start_date DATE NOT NULL DEFAULT CURRENT_DATE
         );
     `;
 
