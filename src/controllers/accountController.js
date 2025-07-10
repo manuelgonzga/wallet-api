@@ -205,7 +205,11 @@ export const updateDarkMode = async (req, res) => {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    res.status(200).json(result[0]);
+    res.status(200).json({
+      success: true,
+      message: "Dark mode preference updated successfully",
+      account: result[0]
+    });
   } catch (error) {
     console.error("Error updating dark mode preference:", error);
     res.status(500).json({ message: "Internal server error" });
