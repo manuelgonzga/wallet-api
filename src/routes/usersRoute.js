@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteAccount } from "../controllers/deleteAccountController.js";
+import { deleteAccount } from "../controllers/accountController.js";
 import { verifyClerkToken } from "../middleware/verifyClerkToken.js";
 
 const router = express.Router();
