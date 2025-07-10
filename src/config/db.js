@@ -35,7 +35,8 @@ export async function initDB() {
         username VARCHAR(100) NOT NULL,
         currency_preference VARCHAR(10) NOT NULL DEFAULT 'EUR',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        dark_mode BOOLEAN NOT NULL DEFAULT FALSE
       );
     `;
 

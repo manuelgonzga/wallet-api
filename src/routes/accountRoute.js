@@ -4,7 +4,8 @@ import {
   getAccount, 
   createOrUpdateAccount, 
   updateUsername, 
-  updateCurrencyPreference, 
+  updateCurrencyPreference,
+  updateDarkMode,
   getValidCurrencies 
 } from "../controllers/accountController.js";
 import { verifyClerkToken } from "../middleware/verifyClerkToken.js";
@@ -26,6 +27,9 @@ router.put("/:userId/username", verifyClerkToken, validateUserAuthorization, upd
 
 // PUT /api/account/:userId/currency - Actualizar preferencia de moneda
 router.put("/:userId/currency", verifyClerkToken, validateUserAuthorization, updateCurrencyPreference);
+
+// PUT /api/account/:userId/dark-mode - Actualizar preferencia de modo oscuro
+router.put("/:userId/dark-mode", verifyClerkToken, validateUserAuthorization, updateDarkMode);
 
 // POST /api/account/delete-account - Eliminar cuenta completa
 router.post("/delete-account", verifyClerkToken, deleteAccount);

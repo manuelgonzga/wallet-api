@@ -20,7 +20,7 @@ export const getAccount = async (req, res) => {
     }
 
     const accounts = await sql`
-      SELECT user_id, username, currency_preference, created_at, updated_at 
+      SELECT user_id, username, currency_preference, dark_mode, created_at, updated_at 
       FROM account 
       WHERE user_id = ${userId}
     `;
@@ -39,11 +39,11 @@ export const getAccount = async (req, res) => {
 // Crear o actualizar información de la cuenta (upsert)
 export const createOrUpdateAccount = async (req, res) => {
   try {
-    const { user_id, username, currency_preference } = req.body;
+    const { user_id, username, currency_preference, dark_mode } = req.body;
 
-    // Validar que todos los campos estén presentes
+    // Validar que los campos obligatorios estén presentes
     if (!user_id || !username || !currency_preference) {
-      return res.status(400).json({ error: "All fields are required: user_id, username, currency_preference" });
+      return res.status(400).json({ error: "Required fields: user_id, username, currency_preference" });
     }
 
     // Validar user_id
@@ -69,14 +69,18 @@ export const createOrUpdateAccount = async (req, res) => {
       return res.status(400).json({ error: currencyValidation.error });
     }
 
+    // Validar dark_mode (opcional, por defecto false)
+    const darkModeValue = dark_mode !== undefined ? Boolean(dark_mode) : false;
+
     const result = await sql`
-      INSERT INTO account (user_id, username, currency_preference, updated_at)
-      VALUES (${user_id}, ${usernameValidation.value}, ${currencyValidation.value}, CURRENT_TIMESTAMP)
+      INSERT INTO account (user_id, username, currency_preference, dark_mode, updated_at)
+      VALUES (${user_id}, ${usernameValidation.value}, ${currencyValidation.value}, ${darkModeValue}, CURRENT_TIMESTAMP)
       ON CONFLICT (user_id) DO UPDATE SET
         username = EXCLUDED.username,
         currency_preference = EXCLUDED.currency_preference,
+        dark_mode = EXCLUDED.dark_mode,
         updated_at = CURRENT_TIMESTAMP
-      RETURNING user_id, username, currency_preference, created_at, updated_at
+      RETURNING user_id, username, currency_preference, dark_mode, created_at, updated_at
     `;
 
     res.status(200).json(result[0]);
@@ -113,7 +117,7 @@ export const updateUsername = async (req, res) => {
       UPDATE account 
       SET username = ${usernameValidation.value}, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ${userId}
-      RETURNING user_id, username, currency_preference, created_at, updated_at
+      RETURNING user_id, username, currency_preference, dark_mode, created_at, updated_at
     `;
 
     if (result.length === 0) {
@@ -154,7 +158,7 @@ export const updateCurrencyPreference = async (req, res) => {
       UPDATE account 
       SET currency_preference = ${currencyValidation.value}, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ${userId}
-      RETURNING user_id, username, currency_preference, created_at, updated_at
+      RETURNING user_id, username, currency_preference, dark_mode, created_at, updated_at
     `;
 
     if (result.length === 0) {
@@ -164,6 +168,46 @@ export const updateCurrencyPreference = async (req, res) => {
     res.status(200).json(result[0]);
   } catch (error) {
     console.error("Error updating currency preference:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Actualizar solo la preferencia de modo oscuro
+export const updateDarkMode = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { dark_mode } = req.body;
+
+    // Validar userId
+    const userIdValidation = validateInput.userId(userId);
+    if (!userIdValidation.isValid) {
+      return res.status(400).json({ error: userIdValidation.error });
+    }
+
+    // Verificar autorización
+    if (userId !== req.auth?.userId) {
+      return res.status(403).json({ error: "Forbidden: You can only update your own account" });
+    }
+
+    // Validar dark_mode (debe ser boolean)
+    if (typeof dark_mode !== 'boolean') {
+      return res.status(400).json({ error: "dark_mode must be a boolean value" });
+    }
+
+    const result = await sql`
+      UPDATE account 
+      SET dark_mode = ${dark_mode}, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ${userId}
+      RETURNING user_id, username, currency_preference, dark_mode, created_at, updated_at
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    res.status(200).json(result[0]);
+  } catch (error) {
+    console.error("Error updating dark mode preference:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
