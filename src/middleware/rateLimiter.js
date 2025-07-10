@@ -1,18 +1,26 @@
 import ratelimit from "../config/upstash.js";
 
-const rateLimiter = async(req,res,next) => {
+const rateLimiter = async(req, res, next) => {
     try {
-        //Hay que cambiarlo para que no todos los usuarios tengan la misma cuota
-        const {success} = await ratelimit.limit("my-rate-limit");
+        // Usar IP del usuario como identificador único
+        const identifier = req.ip || req.connection.remoteAddress || 'unknown';
+        
+        // Rate limit específico por IP
+        const { success } = await ratelimit.limit(`rate-limit:${identifier}`);
 
-        if(!success){
-            return res.status(429).json({message: "Too many request, please try again later"});
+        if (!success) {
+            return res.status(429).json({
+                error: "Too many requests",
+                message: "Rate limit exceeded. Please try again later.",
+                retryAfter: 60 // segundos
+            });
         }
 
-        next()
+        next();
     } catch (error) {
-        console.log("Rate limit error", error);
-        next(error);
+        console.error("Rate limit error:", error);
+        // En caso de error con rate limiting, permitir la request pero loggear el error
+        next();
     }
 };
 

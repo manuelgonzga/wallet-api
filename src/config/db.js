@@ -28,6 +28,17 @@ export async function initDB() {
         );
     `;
 
+    // Crear tabla de cuentas para preferencias de usuario
+    await sql`
+      CREATE TABLE IF NOT EXISTS account (
+        user_id VARCHAR(255) PRIMARY KEY,
+        username VARCHAR(100) NOT NULL,
+        currency_preference VARCHAR(10) NOT NULL DEFAULT 'EUR',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
     console.log("Database initialized successfully");
   } catch (error) {
     console.log("Error initializing DB", error);

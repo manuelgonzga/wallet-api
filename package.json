@@ -4,7 +4,13 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "health-check": "node scripts/health-check.js",
+    "test": "node scripts/health-check.js",
+    "test-imports": "node scripts/test-imports.js",
+    "data-import": "node scripts/data-import.js",
+    "data-clean": "node scripts/data-import.js --clean",
+    "quick-test": "node scripts/quick-test.js"
   },
   "keywords": [],
   "type": "module",
