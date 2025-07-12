@@ -14,7 +14,7 @@ export async function initDB() {
         title VARCHAR(255) NOT NULL,
         amount DECIMAL(10,2) NOT NULL,
         category VARCHAR(255) NOT NULL,
-        settings_tag VARCHAR(50) NOT NULL,
+        settings_tag VARCHAR(100) NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `;
@@ -26,7 +26,7 @@ export async function initDB() {
         user_id VARCHAR(255) NOT NULL,
         total_amount DECIMAL(10, 2) NOT NULL,
         period_days INT NOT NULL,
-        settings_tag VARCHAR(50) UNIQUE NOT NULL,
+        settings_tag VARCHAR(100) UNIQUE NOT NULL,
         is_active BOOLEAN DEFAULT true,
         start_date DATE NOT NULL DEFAULT CURRENT_DATE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -55,7 +55,7 @@ export async function initDB() {
           SELECT 1 FROM information_schema.columns 
           WHERE table_name = 'transactions' AND column_name = 'settings_tag'
         ) THEN
-          ALTER TABLE transactions ADD COLUMN settings_tag VARCHAR(50);
+          ALTER TABLE transactions ADD COLUMN settings_tag VARCHAR(100);
         END IF;
 
         -- Agregar settings_tag a user_settings si no existe
@@ -63,7 +63,7 @@ export async function initDB() {
           SELECT 1 FROM information_schema.columns 
           WHERE table_name = 'user_settings' AND column_name = 'settings_tag'
         ) THEN
-          ALTER TABLE user_settings ADD COLUMN settings_tag VARCHAR(50);
+          ALTER TABLE user_settings ADD COLUMN settings_tag VARCHAR(100);
         END IF;
 
         -- Agregar is_active a user_settings si no existe
