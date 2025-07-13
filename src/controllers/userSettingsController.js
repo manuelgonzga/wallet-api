@@ -74,6 +74,36 @@ export async function createUserSettings(req, res) {
   }
 }
 
+export async function deleteUserSettingsByTag(req, res) {
+  try {
+    const { settingsTag } = req.params;
+
+    // Primero obtenemos la configuración por settingsTag
+    const settings = await sql`
+      SELECT is_active FROM user_settings WHERE settings_tag = ${settingsTag}
+    `;
+
+    if (settings.length === 0) {
+      return res.status(404).json({ message: "Settings not found" });
+    }
+
+    if (settings[0].is_active) {
+      return res.status(400).json({ message: "Cannot delete an active setting" });
+    }
+
+    // Si no está activa, proceder a eliminar
+    const result = await sql`
+      DELETE FROM user_settings WHERE settings_tag = ${settingsTag} RETURNING *
+    `;
+
+    res.status(200).json({ message: "User setting deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user setting by tag:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
 // Eliminar configuración de usuario (marcar como inactiva)
 export async function deleteUserSettings(req, res) {
   try {
