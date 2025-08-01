@@ -3,7 +3,12 @@ import { sql  } from "../config/db.js";
 // Obtener transacciones del periodo activo de configuración
 export async function getTransactionByUserId(req, res) {
         try {
+            console.log("=== GET TRANSACTIONS DEBUG ===");
             const { userId } = req.params;
+            const authUserId = req.auth?.userId;
+            
+            console.log("Requested userId:", userId);
+            console.log("Auth userId:", authUserId);
             
             // Obtener configuración activa del usuario
             const activeSettings = await sql`
@@ -12,11 +17,15 @@ export async function getTransactionByUserId(req, res) {
                 LIMIT 1
             `;
 
+            console.log("Active settings found:", activeSettings);
+
             if (activeSettings.length === 0) {
+                console.log("No active settings found for user");
                 return res.status(404).json({ message: "No active settings found for user" });
             }
 
             const settings_tag = activeSettings[0].settings_tag;
+            console.log("Using settings_tag:", settings_tag);
 
             const transactions = await sql`
                 SELECT t.*, us.total_amount, us.period_days, us.start_date
@@ -26,8 +35,11 @@ export async function getTransactionByUserId(req, res) {
                 ORDER BY t.created_at DESC
             `;
     
+            console.log("Transactions found:", transactions.length);
             res.status(200).json(transactions);
         } catch (error) {
+            console.error("=== GET TRANSACTIONS ERROR ===");
+            console.error("Error details:", error);
             console.log("Error getting the transactions",error)
             res.status(500).json({ message: "Internal server error"})
         }
@@ -55,11 +67,18 @@ export async function getTransactionsByTag(req, res) {
 
 export async function createTransaction(req, res) {
     try {
+        console.log("=== CREATE TRANSACTION DEBUG ===");
+        console.log("Request body:", req.body);
+        console.log("Auth user:", req.auth);
+        
         const {title, amount, category, user_id} = req.body;
         const authUserId = req.auth?.userId;
         
+        console.log("Extracted data:", { title, amount, category, user_id, authUserId });
+        
         // Validar que el user_id del body coincida con el usuario autenticado
         if (user_id && user_id !== authUserId) {
+            console.log("Authorization failed: user_id mismatch");
             return res.status(403).json({ 
                 error: "Forbidden", 
                 message: "You can only create transactions for your own account" 
@@ -70,15 +89,19 @@ export async function createTransaction(req, res) {
         const validUserId = authUserId;
         
         if(!title || !category || amount === undefined){
+            console.log("Validation failed: missing required fields");
             return res.status(400).json({ message: "Title, amount, and category are required" });
         }
 
         // Validar que el amount sea un número válido y positivo
         const parsedAmount = parseFloat(amount);
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            console.log("Validation failed: invalid amount", parsedAmount);
             return res.status(400).json({ message: "Amount must be a positive number" });
         }
 
+        console.log("Looking for active settings for user:", validUserId);
+        
         // Obtener configuración activa del usuario autenticado
         const activeSettings = await sql`
             SELECT settings_tag FROM user_settings 
@@ -86,11 +109,15 @@ export async function createTransaction(req, res) {
             LIMIT 1
         `;
 
+        console.log("Active settings found:", activeSettings);
+
         if (activeSettings.length === 0) {
+            console.log("No active settings found");
             return res.status(404).json({ message: "No active settings found for user" });
         }
 
         const settings_tag = activeSettings[0].settings_tag;
+        console.log("Using settings_tag:", settings_tag);
 
         const transaction = await sql`
             INSERT INTO transactions(user_id, title, amount, category, settings_tag)
@@ -98,11 +125,14 @@ export async function createTransaction(req, res) {
             RETURNING *
         `;
         
+        console.log("Transaction created successfully:", transaction[0]);
         res.status(201).json(transaction[0]); 
 
     } catch (error) {
-        console.log("Error creating the transaction", error)
-        res.status(500).json({ message: "Internal server error"})
+        console.error("=== CREATE TRANSACTION ERROR ===");
+        console.error("Error details:", error);
+        console.error("Stack trace:", error.stack);
+        res.status(500).json({ message: "Internal server error", error: error.message })
     }
 }
 

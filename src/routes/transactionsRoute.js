@@ -26,13 +26,13 @@ router.use(verifyClerkToken);
 router.get("/:userId", validateUserAuthorization, getTransactionByUserId);
 
 // Obtener transacciones por settings_tag específico (historial)
-router.get("/tag/:settingsTag", validateSettingsTagOwnership, getTransactionsByTag);
+router.get("/tag/:settingsTag", getTransactionsByTag);
 
 // Crear nueva transacción (se asocia al periodo activo)
-router.post("/", validateTransactionData, createTransaction);
+router.post("/", createTransaction);
 
 // Eliminar transacción específica
-router.delete("/:id", validateTransactionOwnership, deleteTransaction);
+router.delete("/:id", deleteTransaction);
 
 // Eliminar todas las transacciones del usuario (o de un periodo específico)
 router.delete("/user/:userId", validateUserAuthorization, deleteAllTransactions);
@@ -41,9 +41,9 @@ router.delete("/user/:userId", validateUserAuthorization, deleteAllTransactions)
 router.get("/summary/:userId", validateUserAuthorization, getSummaryByUserId);
 
 // Obtener resumen por settings_tag específico (historial)
-router.get("/summary/tag/:settingsTag", validateSettingsTagOwnership, getSummaryByTag);
+router.get("/summary/tag/:settingsTag", getSummaryByTag);
 
 // Actualizar transacción
-router.put("/:id", validateTransactionOwnership, validateTransactionData, updateTransaction);
+router.put("/:id", updateTransaction);
 
 export default router

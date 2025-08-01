@@ -104,15 +104,10 @@ export const validateInput = {
       return { isValid: false, error: "Category must be less than 100 characters" };
     }
     
-    // Lista de categorías válidas (puedes expandir esto)
-    const validCategories = [
-      'Food & Drinks', 'Shopping', 'Transportation', 'Entertainment', 
-      'Bills', 'Health', 'Education', 'Travel', 'Pets', 'Sports', 
-      'Gifts', 'Housing', 'Utilities', 'Subscriptions', 'Work/Business', 'Other'
-    ];
-    
-    if (!validCategories.includes(trimmed)) {
-      return { isValid: false, error: "Invalid category" };
+    // Validación más flexible - permitir cualquier categoría válida
+    // Solo rechazar caracteres especiales peligrosos
+    if (/[<>'"&]/.test(trimmed)) {
+      return { isValid: false, error: "Category contains invalid characters" };
     }
     
     return { isValid: true, value: trimmed };
