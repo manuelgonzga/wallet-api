@@ -200,3 +200,53 @@ export async function getUserSettingsByTag(req, res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+// Activar configuración específica por settings_tag
+export async function activateUserSettingsByTag(req, res) {
+  try {
+    const { settingsTag } = req.params;
+    const { user_id } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Verificar que la configuración existe y pertenece al usuario
+    const existingSettings = await sql`
+      SELECT * FROM user_settings 
+      WHERE settings_tag = ${settingsTag} AND user_id = ${user_id}
+    `;
+
+    if (existingSettings.length === 0) {
+      return res.status(404).json({ message: "Settings not found or doesn't belong to user" });
+    }
+
+    // Desactivar todas las configuraciones actuales del usuario
+    await sql`
+      UPDATE user_settings 
+      SET is_active = false, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ${user_id} AND is_active = true
+    `;
+
+    // Activar la configuración específica
+    await sql`
+      UPDATE user_settings 
+      SET is_active = true, updated_at = CURRENT_TIMESTAMP
+      WHERE settings_tag = ${settingsTag} AND user_id = ${user_id}
+    `;
+
+    // Obtener la configuración actualizada
+    const updatedSettings = await sql`
+      SELECT * FROM user_settings 
+      WHERE settings_tag = ${settingsTag} AND user_id = ${user_id}
+    `;
+
+    res.status(200).json({
+      message: "Settings activated successfully",
+      settings: updatedSettings[0]
+    });
+  } catch (error) {
+    console.error("Error activating settings:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+}
