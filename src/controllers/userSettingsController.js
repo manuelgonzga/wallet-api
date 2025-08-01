@@ -87,14 +87,17 @@ export async function deleteUserSettingsByTag(req, res) {
       return res.status(404).json({ message: "Settings not found" });
     }
 
-    if (settings[0].is_active) {
-      return res.status(400).json({ message: "Cannot delete an active setting" });
-    }
-
-    // Si no está activa, proceder a eliminar
+    // Permitir eliminar períodos activos - ya no hay restricción
+    // Eliminamos directamente sin verificar si está activo
     const result = await sql`
       DELETE FROM user_settings WHERE settings_tag = ${settingsTag} RETURNING *
     `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Settings not found" });
+    }
+
+    res.status(200).json({ message: "Settings deleted successfully", deleted: result[0] });
   } catch (error) {
     console.error("Error deleting user setting by tag:", error);
     res.status(500).json({ message: "Internal server error" });
