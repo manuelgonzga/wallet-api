@@ -68,25 +68,24 @@ export async function getTransactionsByTag(req, res) {
 export async function createTransaction(req, res) {
     try {
         console.log("=== CREATE TRANSACTION DEBUG ===");
-        console.log("Request body:", req.body);
+        console.log("Request body:", JSON.stringify(req.body, null, 2));
         console.log("Auth user:", req.auth);
+        console.log("Headers:", req.headers.authorization ? "Auth header present" : "No auth header");
         
         const {title, amount, category, user_id} = req.body;
         const authUserId = req.auth?.userId;
         
         console.log("Extracted data:", { title, amount, category, user_id, authUserId });
         
-        // Validar que el user_id del body coincida con el usuario autenticado
-        if (user_id && user_id !== authUserId) {
-            console.log("Authorization failed: user_id mismatch");
-            return res.status(403).json({ 
-                error: "Forbidden", 
-                message: "You can only create transactions for your own account" 
-            });
+        // Usar el userId del token SI EXISTE, sino usar el del body (para compatibilidad)
+        const validUserId = authUserId || user_id;
+        
+        console.log("Valid user ID to use:", validUserId);
+        
+        if (!validUserId) {
+            console.log("No user ID available");
+            return res.status(400).json({ message: "User ID is required" });
         }
-
-        // Usar el userId del token de autenticación como fuente de verdad
-        const validUserId = authUserId;
         
         if(!title || !category || amount === undefined){
             console.log("Validation failed: missing required fields");
@@ -102,7 +101,7 @@ export async function createTransaction(req, res) {
 
         console.log("Looking for active settings for user:", validUserId);
         
-        // Obtener configuración activa del usuario autenticado
+        // Obtener configuración activa del usuario
         const activeSettings = await sql`
             SELECT settings_tag FROM user_settings 
             WHERE user_id = ${validUserId} AND is_active = true
@@ -113,7 +112,7 @@ export async function createTransaction(req, res) {
 
         if (activeSettings.length === 0) {
             console.log("No active settings found");
-            return res.status(404).json({ message: "No active settings found for user" });
+            return res.status(404).json({ message: "No active settings found for user. Please set up your budget first." });
         }
 
         const settings_tag = activeSettings[0].settings_tag;
@@ -132,7 +131,11 @@ export async function createTransaction(req, res) {
         console.error("=== CREATE TRANSACTION ERROR ===");
         console.error("Error details:", error);
         console.error("Stack trace:", error.stack);
-        res.status(500).json({ message: "Internal server error", error: error.message })
+        res.status(500).json({ 
+            message: "Internal server error", 
+            error: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 }
 

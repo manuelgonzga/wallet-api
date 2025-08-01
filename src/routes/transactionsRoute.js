@@ -10,6 +10,7 @@ import {
   deleteAllTransactions 
 } from "../controllers/transactionsController.js"
 import { verifyClerkToken } from "../middleware/verifyClerkToken.js"
+import { verifyClerkTokenDebug } from "../middleware/verifyClerkTokenDebug.js"
 import { 
   validateUserAuthorization, 
   validateSettingsTagOwnership, 
@@ -19,11 +20,17 @@ import {
 
 const router = express.Router()
 
-// Aplicar middleware de autenticación a todas las rutas
-router.use(verifyClerkToken);
+// Ruta de prueba sin autenticación para verificar conectividad
+router.get("/test", (req, res) => {
+  res.json({ message: "Transactions route working", timestamp: new Date().toISOString() });
+});
+
+// Usar middleware de debug temporalmente
+router.use(verifyClerkTokenDebug);
 
 // Obtener transacciones del periodo activo del usuario
-router.get("/:userId", validateUserAuthorization, getTransactionByUserId);
+// Temporalmente sin validateUserAuthorization para debugging
+router.get("/:userId", getTransactionByUserId);
 
 // Obtener transacciones por settings_tag específico (historial)
 router.get("/tag/:settingsTag", getTransactionsByTag);
