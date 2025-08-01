@@ -55,42 +55,62 @@ export async function getTransactionsByTag(req, res) {
 
 export async function createTransaction(req, res) {
     try {
-        const {title, amount, category, user_id} = req.body;
+        console.log("=== CREATE TRANSACTION ===");
+        console.log("Request body:", req.body);
         
-        if(!title || !category || amount === undefined){
-            return res.status(400).json({ message: "Title, amount, and category are required" });
+        const {title, amount, category, user_id, settings_tag} = req.body;
+        
+        console.log("Extracted values:", { title, amount, category, user_id, settings_tag });
+        
+        if(!title || !category || amount === undefined || !user_id){
+            console.log("Validation failed: missing required fields");
+            return res.status(400).json({ message: "Title, amount, category, and user_id are required" });
         }
 
-        // Validar que el amount sea un número válido y positivo
+        // Validar que el amount sea un número válido
         const parsedAmount = parseFloat(amount);
-        if (isNaN(parsedAmount) || parsedAmount <= 0) {
-            return res.status(400).json({ message: "Amount must be a positive number" });
+        if (isNaN(parsedAmount)) {
+            console.log("Validation failed: invalid amount");
+            return res.status(400).json({ message: "Amount must be a valid number" });
         }
         
-        // Obtener configuración activa del usuario
-        const activeSettings = await sql`
-            SELECT settings_tag FROM user_settings 
-            WHERE user_id = ${user_id} AND is_active = true
-            LIMIT 1
-        `;
+        let finalSettingsTag = settings_tag;
+        
+        // Si no se proporciona settings_tag, buscar el activo
+        if (!settings_tag) {
+            console.log("No settings_tag provided, searching for active one");
+            const activeSettings = await sql`
+                SELECT settings_tag FROM user_settings 
+                WHERE user_id = ${user_id} AND is_active = true
+                LIMIT 1
+            `;
 
-        if (activeSettings.length === 0) {
-            return res.status(404).json({ message: "No active settings found for user. Please set up your budget first." });
+            if (activeSettings.length === 0) {
+                console.log("No active settings found");
+                return res.status(404).json({ message: "No active settings found for user. Please set up your budget first." });
+            }
+            
+            finalSettingsTag = activeSettings[0].settings_tag;
+            console.log("Found active settings_tag:", finalSettingsTag);
+        } else {
+            console.log("Using provided settings_tag:", finalSettingsTag);
         }
 
-        const settings_tag = activeSettings[0].settings_tag;
+        console.log("Creating transaction with:", { user_id, title, parsedAmount, category, finalSettingsTag });
 
         const transaction = await sql`
             INSERT INTO transactions(user_id, title, amount, category, settings_tag)
-            VALUES (${user_id}, ${title}, ${parsedAmount}, ${category}, ${settings_tag})
+            VALUES (${user_id}, ${title}, ${parsedAmount}, ${category}, ${finalSettingsTag})
             RETURNING *
         `;
         
+        console.log("Transaction created successfully:", transaction[0]);
         res.status(201).json(transaction[0]); 
 
     } catch (error) {
-        console.log("Error creating transaction", error);
-        res.status(500).json({ message: "Internal server error"});
+        console.error("=== CREATE TRANSACTION ERROR ===");
+        console.error("Error details:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message});
     }
 }
 
