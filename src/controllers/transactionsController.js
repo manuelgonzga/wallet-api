@@ -2,47 +2,35 @@ import { sql  } from "../config/db.js";
 
 // Obtener transacciones del periodo activo de configuración
 export async function getTransactionByUserId(req, res) {
-        try {
-            console.log("=== GET TRANSACTIONS DEBUG ===");
-            const { userId } = req.params;
-            const authUserId = req.auth?.userId;
-            
-            console.log("Requested userId:", userId);
-            console.log("Auth userId:", authUserId);
-            
-            // Obtener configuración activa del usuario
-            const activeSettings = await sql`
-                SELECT settings_tag FROM user_settings 
-                WHERE user_id = ${userId} AND is_active = true
-                LIMIT 1
-            `;
+    try {
+        const { userId } = req.params;
+        
+        // Obtener configuración activa del usuario
+        const activeSettings = await sql`
+            SELECT settings_tag FROM user_settings 
+            WHERE user_id = ${userId} AND is_active = true
+            LIMIT 1
+        `;
 
-            console.log("Active settings found:", activeSettings);
-
-            if (activeSettings.length === 0) {
-                console.log("No active settings found for user");
-                return res.status(404).json({ message: "No active settings found for user" });
-            }
-
-            const settings_tag = activeSettings[0].settings_tag;
-            console.log("Using settings_tag:", settings_tag);
-
-            const transactions = await sql`
-                SELECT t.*, us.total_amount, us.period_days, us.start_date
-                FROM transactions t
-                JOIN user_settings us ON t.settings_tag = us.settings_tag
-                WHERE t.settings_tag = ${settings_tag}
-                ORDER BY t.created_at DESC
-            `;
-    
-            console.log("Transactions found:", transactions.length);
-            res.status(200).json(transactions);
-        } catch (error) {
-            console.error("=== GET TRANSACTIONS ERROR ===");
-            console.error("Error details:", error);
-            console.log("Error getting the transactions",error)
-            res.status(500).json({ message: "Internal server error"})
+        if (activeSettings.length === 0) {
+            return res.status(404).json({ message: "No active settings found for user" });
         }
+
+        const settings_tag = activeSettings[0].settings_tag;
+
+        const transactions = await sql`
+            SELECT t.*, us.total_amount, us.period_days, us.start_date
+            FROM transactions t
+            JOIN user_settings us ON t.settings_tag = us.settings_tag
+            WHERE t.settings_tag = ${settings_tag}
+            ORDER BY t.created_at DESC
+        `;
+
+        res.status(200).json(transactions);
+    } catch (error) {
+        console.log("Error getting the transactions", error)
+        res.status(500).json({ message: "Internal server error"})
+    }
 }
 
 // Obtener transacciones por settings_tag específico (para historial)
@@ -67,75 +55,42 @@ export async function getTransactionsByTag(req, res) {
 
 export async function createTransaction(req, res) {
     try {
-        console.log("=== CREATE TRANSACTION DEBUG ===");
-        console.log("Request body:", JSON.stringify(req.body, null, 2));
-        console.log("Auth user:", req.auth);
-        console.log("Headers:", req.headers.authorization ? "Auth header present" : "No auth header");
-        
         const {title, amount, category, user_id} = req.body;
-        const authUserId = req.auth?.userId;
-        
-        console.log("Extracted data:", { title, amount, category, user_id, authUserId });
-        
-        // Usar el userId del token SI EXISTE, sino usar el del body (para compatibilidad)
-        const validUserId = authUserId || user_id;
-        
-        console.log("Valid user ID to use:", validUserId);
-        
-        if (!validUserId) {
-            console.log("No user ID available");
-            return res.status(400).json({ message: "User ID is required" });
-        }
         
         if(!title || !category || amount === undefined){
-            console.log("Validation failed: missing required fields");
             return res.status(400).json({ message: "Title, amount, and category are required" });
         }
 
         // Validar que el amount sea un número válido y positivo
         const parsedAmount = parseFloat(amount);
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
-            console.log("Validation failed: invalid amount", parsedAmount);
             return res.status(400).json({ message: "Amount must be a positive number" });
         }
-
-        console.log("Looking for active settings for user:", validUserId);
         
         // Obtener configuración activa del usuario
         const activeSettings = await sql`
             SELECT settings_tag FROM user_settings 
-            WHERE user_id = ${validUserId} AND is_active = true
+            WHERE user_id = ${user_id} AND is_active = true
             LIMIT 1
         `;
 
-        console.log("Active settings found:", activeSettings);
-
         if (activeSettings.length === 0) {
-            console.log("No active settings found");
             return res.status(404).json({ message: "No active settings found for user. Please set up your budget first." });
         }
 
         const settings_tag = activeSettings[0].settings_tag;
-        console.log("Using settings_tag:", settings_tag);
 
         const transaction = await sql`
             INSERT INTO transactions(user_id, title, amount, category, settings_tag)
-            VALUES (${validUserId}, ${title}, ${parsedAmount}, ${category}, ${settings_tag})
+            VALUES (${user_id}, ${title}, ${parsedAmount}, ${category}, ${settings_tag})
             RETURNING *
         `;
         
-        console.log("Transaction created successfully:", transaction[0]);
         res.status(201).json(transaction[0]); 
 
     } catch (error) {
-        console.error("=== CREATE TRANSACTION ERROR ===");
-        console.error("Error details:", error);
-        console.error("Stack trace:", error.stack);
-        res.status(500).json({ 
-            message: "Internal server error", 
-            error: error.message,
-            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        console.log("Error creating transaction", error);
+        res.status(500).json({ message: "Internal server error"});
     }
 }
 
