@@ -9,6 +9,10 @@ import {
   updateTransaction, 
   deleteAllTransactions 
 } from "../controllers/transactionsController.js"
+import { 
+  simpleGetTransactions,
+  simpleCreateTransaction 
+} from "../controllers/simpleTransactionsController.js"
 import { verifyClerkToken } from "../middleware/verifyClerkToken.js"
 import { verifyClerkTokenDebug } from "../middleware/verifyClerkTokenDebug.js"
 import { 
@@ -25,18 +29,19 @@ router.get("/test", (req, res) => {
   res.json({ message: "Transactions route working", timestamp: new Date().toISOString() });
 });
 
-// Usar middleware de debug temporalmente
-router.use(verifyClerkTokenDebug);
+// TEMPORALMENTE SIN AUTENTICACIÓN - SOLO PARA DEBUGGING
+// router.use(verifyClerkTokenDebug);
 
 // Obtener transacciones del periodo activo del usuario
-// Temporalmente sin validateUserAuthorization para debugging
-router.get("/:userId", getTransactionByUserId);
+// USANDO CONTROLADOR SIMPLE PARA TESTING
+router.get("/:userId", simpleGetTransactions);
 
 // Obtener transacciones por settings_tag específico (historial)
 router.get("/tag/:settingsTag", getTransactionsByTag);
 
 // Crear nueva transacción (se asocia al periodo activo)
-router.post("/", createTransaction);
+// USANDO CONTROLADOR SIMPLE PARA TESTING
+router.post("/", simpleCreateTransaction);
 
 // Eliminar transacción específica
 router.delete("/:id", deleteTransaction);
