@@ -55,16 +55,34 @@ export async function getTransactionsByTag(req, res) {
 
 export async function createTransaction(req, res) {
     try {
-        const {title,amount,category,user_id} = req.body
+        const {title, amount, category, user_id} = req.body;
+        const authUserId = req.auth?.userId;
         
-        if(!title || !user_id || !category || amount === undefined){
-            return res.status(400).json({ message: "All files are required" });
+        // Validar que el user_id del body coincida con el usuario autenticado
+        if (user_id && user_id !== authUserId) {
+            return res.status(403).json({ 
+                error: "Forbidden", 
+                message: "You can only create transactions for your own account" 
+            });
         }
 
-        // Obtener configuración activa del usuario
+        // Usar el userId del token de autenticación como fuente de verdad
+        const validUserId = authUserId;
+        
+        if(!title || !category || amount === undefined){
+            return res.status(400).json({ message: "Title, amount, and category are required" });
+        }
+
+        // Validar que el amount sea un número válido y positivo
+        const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            return res.status(400).json({ message: "Amount must be a positive number" });
+        }
+
+        // Obtener configuración activa del usuario autenticado
         const activeSettings = await sql`
             SELECT settings_tag FROM user_settings 
-            WHERE user_id = ${user_id} AND is_active = true
+            WHERE user_id = ${validUserId} AND is_active = true
             LIMIT 1
         `;
 
@@ -75,15 +93,15 @@ export async function createTransaction(req, res) {
         const settings_tag = activeSettings[0].settings_tag;
 
         const transaction = await sql`
-            INSERT INTO transactions(user_id,title,amount,category,settings_tag)
-            VALUES (${user_id},${title},${amount},${category},${settings_tag})
+            INSERT INTO transactions(user_id, title, amount, category, settings_tag)
+            VALUES (${validUserId}, ${title}, ${parsedAmount}, ${category}, ${settings_tag})
             RETURNING *
         `;
-        console.log(transaction);
+        
         res.status(201).json(transaction[0]); 
 
     } catch (error) {
-        console.log("Error creating the transaction",error)
+        console.log("Error creating the transaction", error)
         res.status(500).json({ message: "Internal server error"})
     }
 }

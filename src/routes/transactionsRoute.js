@@ -9,31 +9,41 @@ import {
   updateTransaction, 
   deleteAllTransactions 
 } from "../controllers/transactionsController.js"
+import { verifyClerkToken } from "../middleware/verifyClerkToken.js"
+import { 
+  validateUserAuthorization, 
+  validateSettingsTagOwnership, 
+  validateTransactionOwnership,
+  validateTransactionData 
+} from "../middleware/validation.js"
 
 const router = express.Router()
 
+// Aplicar middleware de autenticación a todas las rutas
+router.use(verifyClerkToken);
+
 // Obtener transacciones del periodo activo del usuario
-router.get("/:userId", getTransactionByUserId);
+router.get("/:userId", validateUserAuthorization, getTransactionByUserId);
 
 // Obtener transacciones por settings_tag específico (historial)
-router.get("/tag/:settingsTag", getTransactionsByTag);
+router.get("/tag/:settingsTag", validateSettingsTagOwnership, getTransactionsByTag);
 
 // Crear nueva transacción (se asocia al periodo activo)
-router.post("/", createTransaction);
+router.post("/", validateTransactionData, createTransaction);
 
 // Eliminar transacción específica
-router.delete("/:id", deleteTransaction);
+router.delete("/:id", validateTransactionOwnership, deleteTransaction);
 
 // Eliminar todas las transacciones del usuario (o de un periodo específico)
-router.delete("/user/:userId", deleteAllTransactions);
+router.delete("/user/:userId", validateUserAuthorization, deleteAllTransactions);
 
 // Obtener resumen del periodo activo
-router.get("/summary/:userId", getSummaryByUserId);
+router.get("/summary/:userId", validateUserAuthorization, getSummaryByUserId);
 
 // Obtener resumen por settings_tag específico (historial)
-router.get("/summary/tag/:settingsTag", getSummaryByTag);
+router.get("/summary/tag/:settingsTag", validateSettingsTagOwnership, getSummaryByTag);
 
 // Actualizar transacción
-router.put("/:id", updateTransaction);
+router.put("/:id", validateTransactionOwnership, validateTransactionData, updateTransaction);
 
 export default router

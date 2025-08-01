@@ -130,29 +130,22 @@ export async function deleteUserSettings(req, res) {
 // Actualizar configuración activa del usuario (sin crear nuevo periodo)
 export async function updateActiveUserSettings(req, res) {
   try {
-    console.log('updateActiveUserSettings called with body:', req.body);
-    
     const { user_id, total_amount, period_days } = req.body;
     
     if (!user_id) {
-      console.log('Missing user_id');
       return res.status(400).json({ message: "user_id is required" });
     }
 
     // Verificar que se está enviando al menos un campo para actualizar
     if (total_amount === undefined && period_days === undefined) {
-      console.log('No fields to update');
       return res.status(400).json({ message: "No fields to update" });
     }
-
-    console.log('Fields to update:', { total_amount, period_days });
 
     // Construir query usando template literals con sql
     let result;
     
     if (total_amount !== undefined && period_days !== undefined) {
       // Actualizar ambos campos
-      console.log('Updating both fields');
       result = await sql`
         UPDATE user_settings 
         SET total_amount = ${total_amount}, period_days = ${period_days}, updated_at = CURRENT_TIMESTAMP
@@ -161,7 +154,6 @@ export async function updateActiveUserSettings(req, res) {
       `;
     } else if (total_amount !== undefined) {
       // Solo actualizar total_amount
-      console.log('Updating only total_amount');
       result = await sql`
         UPDATE user_settings 
         SET total_amount = ${total_amount}, updated_at = CURRENT_TIMESTAMP
@@ -170,7 +162,6 @@ export async function updateActiveUserSettings(req, res) {
       `;
     } else {
       // Solo actualizar period_days
-      console.log('Updating only period_days');
       result = await sql`
         UPDATE user_settings 
         SET period_days = ${period_days}, updated_at = CURRENT_TIMESTAMP
@@ -179,14 +170,10 @@ export async function updateActiveUserSettings(req, res) {
       `;
     }
 
-    console.log('Query result:', result);
-
     if (result.length === 0) {
-      console.log('No active user settings found');
       return res.status(404).json({ message: "Active user settings not found" });
     }
 
-    console.log('Sending response:', result[0]);
     res.status(200).json(result[0]);
   } catch (error) {
     console.error("Error updating active user settings:", error);
