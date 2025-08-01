@@ -95,8 +95,6 @@ export async function deleteUserSettingsByTag(req, res) {
     const result = await sql`
       DELETE FROM user_settings WHERE settings_tag = ${settingsTag} RETURNING *
     `;
-
-    res.status(200).json({ message: "User setting deleted successfully" });
   } catch (error) {
     console.error("Error deleting user setting by tag:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -119,8 +117,6 @@ export async function deleteUserSettings(req, res) {
     if (result.length === 0) {
       return res.status(404).json({ message: "Active user settings not found" });
     }
-
-    res.status(200).json({ message: "User settings deactivated successfully" });
   } catch (error) {
     console.error("Error deleting user settings:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -242,7 +238,6 @@ export async function activateUserSettingsByTag(req, res) {
     `;
 
     res.status(200).json({
-      message: "Settings activated successfully",
       settings: updatedSettings[0]
     });
   } catch (error) {
