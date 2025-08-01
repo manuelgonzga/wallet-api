@@ -44,11 +44,14 @@ export async function getUserSettingsHistory(req, res) {
 // Crear nueva configuración de usuario (desactiva la anterior)
 export async function createUserSettings(req, res) {
   try {
-    const { user_id, total_amount, period_days } = req.body;
+    const { user_id, total_amount, period_days, title } = req.body;
 
     if (!user_id || total_amount === undefined || period_days === undefined) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    // Si no se proporciona título, generar uno por defecto
+    const budgetTitle = title || `Budget Period ${new Date().toLocaleDateString()}`;
 
     // Generar un settings_tag único
     const settings_tag = `${user_id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -62,8 +65,8 @@ export async function createUserSettings(req, res) {
 
     // Crear nueva configuración activa
     const result = await sql`
-      INSERT INTO user_settings (user_id, total_amount, period_days, settings_tag, is_active)
-      VALUES (${user_id}, ${total_amount}, ${period_days}, ${settings_tag}, true)
+      INSERT INTO user_settings (user_id, total_amount, period_days, settings_tag, title, is_active)
+      VALUES (${user_id}, ${total_amount}, ${period_days}, ${settings_tag}, ${budgetTitle}, true)
       RETURNING *
     `;
 
@@ -246,5 +249,37 @@ export async function activateUserSettingsByTag(req, res) {
   } catch (error) {
     console.error("Error activating settings:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });
+  }
+}
+
+// Actualizar título de período activo
+export async function updateActiveSettingsTitle(req, res) {
+  try {
+    const { userId } = req.params;
+    const { title } = req.body;
+
+    if (!title || title.trim() === '') {
+      return res.status(400).json({ message: "Title is required" });
+    }
+
+    // Actualizar el título del período activo
+    const result = await sql`
+      UPDATE user_settings 
+      SET title = ${title.trim()}, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ${userId} AND is_active = true
+      RETURNING *
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Active settings not found" });
+    }
+
+    res.status(200).json({ 
+      message: "Title updated successfully", 
+      settings: result[0] 
+    });
+  } catch (error) {
+    console.error("Error updating settings title:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 }
