@@ -38,7 +38,7 @@ export async function initDB() {
     await sql`
       CREATE TABLE IF NOT EXISTS account (
         user_id VARCHAR(255) PRIMARY KEY,
-        username VARCHAR(100) NOT NULL,
+        username VARCHAR(11) NOT NULL,
         currency_preference VARCHAR(10) NOT NULL DEFAULT 'EUR',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

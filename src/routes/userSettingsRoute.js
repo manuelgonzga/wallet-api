@@ -5,7 +5,8 @@ import {
   getUserSettingsHistory,
   getUserSettingsByTag,
   deleteUserSettings,
-  deleteUserSettingsByTag
+  deleteUserSettingsByTag,
+  updateActiveUserSettings
 } from "../controllers/userSettingsController.js";
 
 const router = express.Router();
@@ -21,6 +22,9 @@ router.get("/tag/:settingsTag", getUserSettingsByTag);
 
 // Crear nueva configuración (desactiva la anterior)
 router.post("/", createUserSettings);
+
+// Actualizar configuración activa (sin crear nuevo periodo)
+router.patch("/active", updateActiveUserSettings);
 
 // Borrar una configuracion por tag
 router.delete('/:settingsTag/delete', deleteUserSettingsByTag);

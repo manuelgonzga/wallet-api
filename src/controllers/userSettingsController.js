@@ -127,6 +127,57 @@ export async function deleteUserSettings(req, res) {
   }
 }
 
+// Actualizar configuración activa del usuario (sin crear nuevo periodo)
+export async function updateActiveUserSettings(req, res) {
+  try {
+    const { user_id, total_amount, period_days } = req.body;
+    
+    if (!user_id) {
+      return res.status(400).json({ message: "user_id is required" });
+    }
+
+    // Construir la consulta dinámicamente
+    const updates = [];
+    const values = [user_id];
+    let valueIndex = 2;
+
+    if (total_amount !== undefined) {
+      updates.push(`total_amount = $${valueIndex}`);
+      values.push(total_amount);
+      valueIndex++;
+    }
+
+    if (period_days !== undefined) {
+      updates.push(`period_days = $${valueIndex}`);
+      values.push(period_days);
+      valueIndex++;
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    const setClause = updates.join(", ");
+    const query = `
+      UPDATE user_settings 
+      SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = $1 AND is_active = true 
+      RETURNING *
+    `;
+
+    const result = await sql.unsafe(query, values);
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Active user settings not found" });
+    }
+
+    res.status(200).json(result[0]);
+  } catch (error) {
+    console.error("Error updating active user settings:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 // Obtener configuración por settings_tag
 export async function getUserSettingsByTag(req, res) {
   try {

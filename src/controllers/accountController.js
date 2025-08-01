@@ -39,38 +39,52 @@ export const getAccount = async (req, res) => {
 // Crear o actualizar información de la cuenta (upsert)
 export const createOrUpdateAccount = async (req, res) => {
   try {
+    console.log("[createOrUpdateAccount] req.body:", req.body);
+    console.log("[createOrUpdateAccount] req.auth:", req.auth);
     const { user_id, username, currency_preference, dark_mode } = req.body;
 
     // Validar que los campos obligatorios estén presentes
     if (!user_id || !username || !currency_preference) {
+      console.warn("[createOrUpdateAccount] Missing required fields", { user_id, username, currency_preference });
       return res.status(400).json({ error: "Required fields: user_id, username, currency_preference" });
     }
 
     // Validar user_id
     const userIdValidation = validateInput.userId(user_id);
     if (!userIdValidation.isValid) {
+      console.warn("[createOrUpdateAccount] Invalid user_id:", user_id, userIdValidation.error);
       return res.status(400).json({ error: userIdValidation.error });
     }
 
     // Verificar autorización - el usuario solo puede crear/actualizar su propia cuenta
     if (user_id !== req.auth?.userId) {
+      console.warn("[createOrUpdateAccount] Forbidden: user_id does not match token", { user_id, authUserId: req.auth?.userId });
       return res.status(403).json({ error: "Forbidden: You can only manage your own account" });
     }
 
     // Validar username
     const usernameValidation = validateInput.username(username);
     if (!usernameValidation.isValid) {
+      console.warn("[createOrUpdateAccount] Invalid username:", username, usernameValidation.error);
       return res.status(400).json({ error: usernameValidation.error });
     }
 
     // Validar currency preference
     const currencyValidation = validateInput.currencyPreference(currency_preference);
     if (!currencyValidation.isValid) {
+      console.warn("[createOrUpdateAccount] Invalid currency_preference:", currency_preference, currencyValidation.error);
       return res.status(400).json({ error: currencyValidation.error });
     }
 
     // Validar dark_mode (opcional, por defecto false)
     const darkModeValue = dark_mode !== undefined ? Boolean(dark_mode) : false;
+
+    console.log("[createOrUpdateAccount] All validations passed", {
+      user_id,
+      username: usernameValidation.value,
+      currency_preference: currencyValidation.value,
+      dark_mode: darkModeValue
+    });
 
     const result = await sql`
       INSERT INTO account (user_id, username, currency_preference, dark_mode, updated_at)
@@ -83,10 +97,11 @@ export const createOrUpdateAccount = async (req, res) => {
       RETURNING user_id, username, currency_preference, dark_mode, created_at, updated_at
     `;
 
+    console.log("[createOrUpdateAccount] SQL result:", result);
     res.status(200).json(result[0]);
   } catch (error) {
-    console.error("Error creating/updating account:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("[createOrUpdateAccount] Error:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
 
