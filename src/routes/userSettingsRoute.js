@@ -8,7 +8,8 @@ import {
   deleteUserSettingsByTag,
   updateActiveUserSettings,
   activateUserSettingsByTag,
-  updateActiveSettingsTitle
+  updateActiveSettingsTitle,
+  updateActiveSettingsCurrency
 } from "../controllers/userSettingsController.js";
 
 const router = express.Router();
@@ -30,6 +31,9 @@ router.patch("/active", updateActiveUserSettings);
 
 // Actualizar título del período activo
 router.patch("/:userId/title", updateActiveSettingsTitle);
+
+// Actualizar moneda del período activo
+router.patch("/:userId/currency", updateActiveSettingsCurrency);
 
 // Borrar una configuracion por tag
 router.delete('/:settingsTag/delete', deleteUserSettingsByTag);

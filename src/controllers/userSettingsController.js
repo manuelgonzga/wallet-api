@@ -44,7 +44,7 @@ export async function getUserSettingsHistory(req, res) {
 // Crear nueva configuración de usuario (desactiva la anterior)
 export async function createUserSettings(req, res) {
   try {
-    const { user_id, total_amount, period_days, title } = req.body;
+    const { user_id, total_amount, period_days, title, currency } = req.body;
 
     if (!user_id || total_amount === undefined || period_days === undefined) {
       return res.status(400).json({ message: "All fields are required" });
@@ -52,6 +52,9 @@ export async function createUserSettings(req, res) {
 
     // Si no se proporciona título, generar uno por defecto
     const budgetTitle = title || `Budget Period ${new Date().toLocaleDateString()}`;
+    
+    // Si no se proporciona moneda, usar EUR por defecto
+    const budgetCurrency = currency || 'EUR';
 
     // Generar un settings_tag único
     const settings_tag = `${user_id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
@@ -65,8 +68,8 @@ export async function createUserSettings(req, res) {
 
     // Crear nueva configuración activa
     const result = await sql`
-      INSERT INTO user_settings (user_id, total_amount, period_days, settings_tag, title, is_active)
-      VALUES (${user_id}, ${total_amount}, ${period_days}, ${settings_tag}, ${budgetTitle}, true)
+      INSERT INTO user_settings (user_id, total_amount, period_days, settings_tag, title, currency, is_active)
+      VALUES (${user_id}, ${total_amount}, ${period_days}, ${settings_tag}, ${budgetTitle}, ${budgetCurrency}, true)
       RETURNING *
     `;
 
@@ -280,6 +283,41 @@ export async function updateActiveSettingsTitle(req, res) {
     });
   } catch (error) {
     console.error("Error updating settings title:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Actualizar la moneda del período activo
+export async function updateActiveSettingsCurrency(req, res) {
+  try {
+    const { userId } = req.params;
+    const { currency } = req.body;
+
+    if (!currency) {
+      return res.status(400).json({ message: "Currency is required" });
+    }
+
+    if (currency.length !== 3) {
+      return res.status(400).json({ message: "Currency must be a 3-letter code" });
+    }
+
+    const result = await sql`
+      UPDATE user_settings 
+      SET currency = ${currency.toUpperCase()}, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ${userId} AND is_active = true
+      RETURNING *
+    `;
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Active settings not found" });
+    }
+
+    res.status(200).json({ 
+      message: "Currency updated successfully", 
+      settings: result[0] 
+    });
+  } catch (error) {
+    console.error("Error updating settings currency:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
