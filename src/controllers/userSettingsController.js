@@ -53,8 +53,15 @@ export async function createUserSettings(req, res) {
     // Si no se proporciona título, generar uno por defecto
     const budgetTitle = title || `Budget Period ${new Date().toLocaleDateString()}`;
     
-    // Si no se proporciona moneda, usar EUR por defecto
-    const budgetCurrency = currency || 'EUR';
+    // Si no se proporciona moneda, obtener la currency general del usuario
+    let budgetCurrency = currency;
+    if (!budgetCurrency) {
+      // Obtener la currency general del usuario desde la tabla accounts
+      const userAccount = await sql`
+        SELECT currency FROM accounts WHERE user_id = ${user_id} LIMIT 1
+      `;
+      budgetCurrency = userAccount.length > 0 ? userAccount[0].currency : 'EUR';
+    }
 
     // Generar un settings_tag único
     const settings_tag = `${user_id}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
