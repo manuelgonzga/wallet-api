@@ -90,30 +90,58 @@ export async function createUserSettings(req, res) {
 export async function deleteUserSettingsByTag(req, res) {
   try {
     const { settingsTag } = req.params;
+    
+    console.log("Attempting to delete settings with tag:", settingsTag);
+    console.log("Request params:", req.params);
+
+    if (!settingsTag) {
+      console.error("No settingsTag provided");
+      return res.status(400).json({ message: "Settings tag is required" });
+    }
 
     // Primero obtenemos la configuración por settingsTag
     const settings = await sql`
       SELECT is_active FROM user_settings WHERE settings_tag = ${settingsTag}
     `;
 
+    console.log("Found settings:", settings);
+
     if (settings.length === 0) {
+      console.error("Settings not found for tag:", settingsTag);
       return res.status(404).json({ message: "Settings not found" });
     }
 
     // Permitir eliminar períodos activos - ya no hay restricción
-    // Eliminamos directamente sin verificar si está activo
+    // Primero eliminar todas las transacciones asociadas al settings_tag
+    console.log("Deleting transactions for settings_tag:", settingsTag);
+    const deletedTransactions = await sql`
+      DELETE FROM transactions WHERE settings_tag = ${settingsTag} RETURNING id
+    `;
+
+    console.log("Deleted transactions:", deletedTransactions.length);
+
+    // Luego eliminar la configuración de usuario
     const result = await sql`
       DELETE FROM user_settings WHERE settings_tag = ${settingsTag} RETURNING *
     `;
 
+    console.log("Delete result:", result);
+
     if (result.length === 0) {
+      console.error("No settings were deleted for tag:", settingsTag);
       return res.status(404).json({ message: "Settings not found" });
     }
 
-    res.status(200).json({ message: "Settings deleted successfully", deleted: result[0] });
+    console.log("Settings deleted successfully:", result[0]);
+    res.status(200).json({ 
+      message: "Settings and associated transactions deleted successfully", 
+      deleted: result[0],
+      deletedTransactionsCount: deletedTransactions.length
+    });
   } catch (error) {
     console.error("Error deleting user setting by tag:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error stack:", error.stack);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 }
 
