@@ -123,7 +123,7 @@ export const updateCurrencyPreference = async (req, res) => {
       UPDATE account 
       SET currency_preference = ${currencyValidation.value}, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ${userId}
-      RETURNING user_id, username, currency_preference, dark_mode, created_at, updated_at
+      RETURNING user_id, currency_preference, dark_mode, created_at, updated_at
     `;
 
     if (result.length === 0) {
@@ -163,7 +163,7 @@ export const updateDarkMode = async (req, res) => {
       UPDATE account 
       SET dark_mode = ${dark_mode}, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ${userId}
-      RETURNING user_id, username, currency_preference, dark_mode, created_at, updated_at
+      RETURNING user_id, currency_preference, dark_mode, created_at, updated_at
     `;
 
     if (result.length === 0) {
