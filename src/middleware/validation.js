@@ -13,26 +13,6 @@ export const validateInput = {
     return { isValid: true };
   },
 
-  // Validar username
-  username: (username) => {
-    if (!username || typeof username !== 'string') {
-      return { isValid: false, error: "Username is required and must be a string" };
-    }
-    
-    const trimmed = username.trim();
-    if (trimmed.length === 0) {
-      return { isValid: false, error: "Username cannot be empty" };
-    }
-    if (trimmed.length > 100) {
-      return { isValid: false, error: "Username must be less than 100 characters" };
-    }
-    if (!/^[a-zA-Z0-9_.-]+$/.test(trimmed)) {
-      return { isValid: false, error: "Username can only contain letters, numbers, dots, hyphens, and underscores" };
-    }
-    
-    return { isValid: true, value: trimmed };
-  },
-
   // Validar currency preference
   currencyPreference: (currency) => {
     if (!currency || typeof currency !== 'string') {

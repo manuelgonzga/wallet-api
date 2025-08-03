@@ -3,7 +3,6 @@ import {
   deleteAccount,
   getAccount, 
   createOrUpdateAccount, 
-  updateUsername, 
   updateCurrencyPreference,
   updateDarkMode,
   getValidCurrencies 
@@ -21,9 +20,6 @@ router.get("/:userId", verifyClerkToken, validateUserAuthorization, getAccount);
 
 // POST /api/account - Crear o actualizar cuenta
 router.post("/", verifyClerkToken, createOrUpdateAccount);
-
-// PUT /api/account/:userId/username - Actualizar nombre de usuario
-router.put("/:userId/username", verifyClerkToken, validateUserAuthorization, updateUsername);
 
 // PUT /api/account/:userId/currency - Actualizar preferencia de moneda
 router.put("/:userId/currency", verifyClerkToken, validateUserAuthorization, updateCurrencyPreference);

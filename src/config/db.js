@@ -38,12 +38,24 @@ export async function initDB() {
     await sql`
       CREATE TABLE IF NOT EXISTS account (
         user_id VARCHAR(255) PRIMARY KEY,
-        username VARCHAR(11) NOT NULL,
         currency_preference VARCHAR(10) NOT NULL DEFAULT 'EUR',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         dark_mode BOOLEAN NOT NULL DEFAULT FALSE
       );
+    `;
+
+    // Eliminar columna username si existe (migración)
+    await sql`
+      DO $$ 
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'account' AND column_name = 'username'
+        ) THEN
+          ALTER TABLE account DROP COLUMN username;
+        END IF;
+      END $$;
     `;
 
     // Agregar campos faltantes a tablas existentes si no tienen el nuevo esquema
